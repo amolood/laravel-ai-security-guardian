@@ -1,0 +1,17 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 4
+    paths:
+        - src
+    treatPhpDocTypesAsCertain: false
+    checkModelProperties: false
+    ignoreErrors:
+        # Defensive null guard in a catch block. PHPStan assumes the prior
+        # fixer call cannot throw and therefore narrows $backupPath to a
+        # non-null string, but a FixerInterface implementation can throw before
+        # the backup is ever created — the guard must stay for runtime safety.
+        -
+            message: '#Strict comparison using !== between non-falsy-string and null will always evaluate to true#'
+            path: src/Fixers/SafeFixManager.php

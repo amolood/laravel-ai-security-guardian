@@ -277,10 +277,10 @@ class DashboardController extends Controller
     private function scanSummary(?SecurityScan $scan): array
     {
         return [
-            'lastScanStatus' => $scan?->status ?? 'not_run',
+            'lastScanStatus' => $scan !== null ? $scan->status : 'not_run',
             'lastScanTime' => $this->formatDate($scan?->started_at),
-            'provider' => $scan?->provider ?? config('ai-security-guardian.provider', 'openai'),
-            'model' => $scan?->model ?? data_get(config('ai-security-guardian.providers'), config('ai-security-guardian.provider', 'openai').'.model', 'unknown'),
+            'provider' => $scan !== null ? $scan->provider : config('ai-security-guardian.provider', 'openai'),
+            'model' => $scan !== null ? $scan->model : data_get(config('ai-security-guardian.providers'), config('ai-security-guardian.provider', 'openai').'.model', 'unknown'),
             'duration' => $this->durationLabel($scan?->started_at, $scan?->finished_at),
             'autoFix' => $this->statusBadge(config('ai-security-guardian.auto_fix.enabled', false)),
             'safeMode' => $this->statusBadge(config('ai-security-guardian.auto_fix.safe_fixes_only', true)),
@@ -308,7 +308,7 @@ class DashboardController extends Controller
             ->sortBy('started_at')
             ->values()
             ->map(fn (SecurityScan $scan) => [
-                'label' => $scan->started_at?->format('M j') ?? $this->ui()->t('common.unknown'),
+                'label' => $scan->started_at->format('M j'),
                 'risk' => (int) $scan->risk_score,
                 'status' => $scan->status,
             ]);
@@ -319,6 +319,7 @@ class DashboardController extends Controller
         return SecurityFinding::query()
             ->select('severity', DB::raw('COUNT(*) as total'))
             ->groupBy('severity')
+            ->toBase()
             ->get()
             ->map(fn ($row) => [
                 'severity' => $row->severity,
@@ -333,6 +334,7 @@ class DashboardController extends Controller
             ->groupBy('scanner_name')
             ->orderByDesc('total')
             ->limit(6)
+            ->toBase()
             ->get()
             ->map(fn ($row) => [
                 'scanner_name' => $row->scanner_name === 'Unknown Scanner' ? $this->ui()->t('common.unknown') : $row->scanner_name,
@@ -347,6 +349,7 @@ class DashboardController extends Controller
             ->groupBy('category')
             ->orderByDesc('total')
             ->limit(6)
+            ->toBase()
             ->get()
             ->map(fn ($row) => [
                 'category' => $row->category,
@@ -816,18 +819,13 @@ class DashboardController extends Controller
             || (bool) data_get($notifications, 'slack.enabled');
     }
 
-    private function scanTrendSeries(): Collection
-    {
-        return $this->scanTrend();
-    }
-
     private function durationLabel(?Carbon $start, ?Carbon $end): string
     {
         if (! $start || ! $end) {
             return $this->ui()->t('health.pending');
         }
 
-        $seconds = max(0, $start->diffInSeconds($end));
+        $seconds = (int) max(0, $start->diffInSeconds($end));
 
         if ($seconds < 60) {
             return $seconds . 's';

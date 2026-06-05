@@ -95,7 +95,7 @@ class ControllerScanner implements ScannerInterface
             if (str_contains(str_replace(' ', '', $line), $method)) {
                 $findings->push(new Finding(
                     title: 'Mass Assignment Risk',
-                    description: "Using `$request->all()` in creation or update methods can lead to mass assignment vulnerabilities.",
+                    description: 'Using `$request->all()` in creation or update methods can lead to mass assignment vulnerabilities.',
                     severity: Severity::HIGH,
                     category: 'mass_assignment',
                     affectedFile: $filePath,

@@ -10,7 +10,11 @@ class AuthorizeAiSecurity
 {
     public function handle(Request $request, Closure $next)
     {
-        if (app()->environment(['local', 'testing'])) {
+        // The local/testing bypass is opt-in. Running `local` env on a
+        // reachable host should NOT silently expose the dashboard (which maps
+        // out the application's known vulnerabilities). Defaults to false.
+        if (config('ai-security-guardian.ui.allow_unauthenticated_local', false)
+            && app()->environment(['local', 'testing'])) {
             return $next($request);
         }
 

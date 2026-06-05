@@ -7,6 +7,13 @@ return [
         'enabled' => env('AI_SECURITY_UI_ENABLED', true),
         'prefix' => env('AI_SECURITY_UI_PREFIX', 'ai-security'),
         'middleware' => ['web', 'auth'],
+
+        // When true, the dashboard is reachable without passing the
+        // `viewAiSecurity` gate while the app is in the local/testing
+        // environment. Keep this false on any reachable host: the dashboard
+        // exposes a map of the application's known vulnerabilities.
+        'allow_unauthenticated_local' => env('AI_SECURITY_UI_ALLOW_UNAUTH_LOCAL', false),
+
         'theme' => env('AI_SECURITY_UI_THEME', 'auto'),
         'rtl' => env('AI_SECURITY_UI_RTL', false),
         'locale' => env('AI_SECURITY_UI_LOCALE', env('APP_LOCALE', 'en')),

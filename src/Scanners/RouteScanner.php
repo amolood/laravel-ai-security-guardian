@@ -23,7 +23,7 @@ class RouteScanner implements ScannerInterface
     public function scan(): Collection
     {
         $findings = collect();
-        $routes = Route::getRoutes();
+        $routes = Route::getRoutes()->getRoutes();
 
         foreach ($routes as $route) {
             $uri = $route->uri();

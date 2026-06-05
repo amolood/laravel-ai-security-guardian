@@ -4,6 +4,7 @@ namespace Abdalmolood\AiSecurityGuardian;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Abdalmolood\AiSecurityGuardian\Console\ScanCommand;
 use Abdalmolood\AiSecurityGuardian\Console\DeepScanCommand;
@@ -40,6 +41,8 @@ class AiSecurityGuardianServiceProvider extends ServiceProvider
 
         View::share('ui', $this->app->make(Ui::class));
 
+        $this->registerDefaultGate();
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/ai-security-guardian.php' => config_path('ai-security-guardian.php'),
@@ -72,6 +75,26 @@ class AiSecurityGuardianServiceProvider extends ServiceProvider
                 $schedule->command('ai-security:scan')
                          ->dailyAt(config('ai-security-guardian.scan.time'));
             }
+        });
+    }
+
+    /**
+     * Register a deny-by-default authorization gate for the dashboard.
+     *
+     * The host application can override `viewAiSecurity` with its own logic.
+     * If it does not, access is denied in non-local environments rather than
+     * silently exposing security findings to any authenticated user.
+     */
+    protected function registerDefaultGate(): void
+    {
+        if (Gate::has('viewAiSecurity')) {
+            return;
+        }
+
+        Gate::define('viewAiSecurity', function ($user = null) {
+            // No host-defined policy: fail closed. The host app is expected to
+            // override this gate to grant access to the appropriate users.
+            return false;
         });
     }
 }
