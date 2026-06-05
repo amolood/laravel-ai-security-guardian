@@ -6,6 +6,32 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $scan_id
+ * @property string|null $scanner_name
+ * @property string $severity
+ * @property string $category
+ * @property string|null $package_name
+ * @property string|null $cve
+ * @property string|null $advisory_url
+ * @property string|null $affected_file
+ * @property int|null $affected_line
+ * @property string $title
+ * @property string $description
+ * @property string|null $business_impact
+ * @property string|null $technical_impact
+ * @property string|null $recommendation
+ * @property string|null $test_plan
+ * @property array|null $references
+ * @property string $status
+ * @property bool $safe_auto_fix_allowed
+ * @property bool $human_review_required
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read SecurityScan $scan
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, SecurityPatch> $patches
+ */
 class SecurityFinding extends Model
 {
     protected $table = 'security_findings';

@@ -5,6 +5,20 @@ namespace Abdalmolood\AiSecurityGuardian\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $finding_id
+ * @property string|null $branch_name
+ * @property string|null $pull_request_url
+ * @property string|null $patch_file
+ * @property string|null $original_file_path
+ * @property string|null $backup_path
+ * @property string|null $tests_status
+ * @property string $status
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read SecurityFinding $finding
+ */
 class SecurityPatch extends Model
 {
     protected $table = 'security_patches';

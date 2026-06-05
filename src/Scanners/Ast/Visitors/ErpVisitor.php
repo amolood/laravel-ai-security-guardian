@@ -14,9 +14,9 @@ class ErpVisitor extends BaseVisitor
 {
     public function enterNode(Node $node)
     {
-        if ($node instanceof ClassMethod && $node->name instanceof Node\Identifier) {
+        if ($node instanceof ClassMethod) {
             $methodName = strtolower($node->name->toString());
-            
+
             if ($methodName === 'update' || $methodName === 'edit') {
                 $nodeFinder = new NodeFinder();
                 

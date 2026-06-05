@@ -5,14 +5,14 @@ namespace Abdalmolood\AiSecurityGuardian\Scanners\Ast;
 use PhpParser\Error;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
-use PhpParser\NodeVisitorAbstract;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Abdalmolood\AiSecurityGuardian\Contracts\ScannerInterface;
+use Abdalmolood\AiSecurityGuardian\Scanners\Ast\Visitors\BaseVisitor;
 
 abstract class AbstractAstScanner implements ScannerInterface
 {
-    protected function parseFiles(string $path, NodeVisitorAbstract $visitor): Collection
+    protected function parseFiles(string $path, BaseVisitor $visitor): Collection
     {
         $findings = collect();
         

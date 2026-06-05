@@ -18,7 +18,7 @@ class RaceConditionVisitor extends BaseVisitor
     public function enterNode(Node $node)
     {
         // Find methods that look like critical financial/inventory actions
-        if ($node instanceof ClassMethod && $node->name instanceof Node\Identifier) {
+        if ($node instanceof ClassMethod) {
             $methodName = strtolower($node->name->toString());
             
             $isCritical = false;

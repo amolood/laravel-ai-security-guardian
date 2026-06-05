@@ -96,18 +96,24 @@ class ScanCommand extends Command
                 $prompt = "Review the following security findings from a Laravel application. Provide severity classification, remediation steps, and check for false positives.";
                 
                 $aiResponse = $aiManager->provider()->analyze($prompt, $context);
-                
-                // Merge AI insights with local findings or replace them
+
+                // Keep the deterministic local findings as the canonical record
+                // and ADD the AI findings alongside them (provenance preserved).
+                // The AI can drop or hallucinate findings, so it must never
+                // silently overwrite what the local scanners deterministically
+                // detected.
                 if (count($aiResponse->findings) > 0) {
-                    $findingsForReport = collect($aiResponse->findings);
-                    $findingsToSave = collect($aiResponse->findings)->map(function ($finding) {
+                    $aiEntries = collect($aiResponse->findings)->map(function ($finding) {
                         return [
                             'scanner_name' => 'AI Deep Scan',
                             'finding' => $finding,
                         ];
                     });
+
+                    $findingsToSave = $scannerFindings->concat($aiEntries);
+                    $findingsForReport = $localFindings->concat(collect($aiResponse->findings));
                 }
-                
+
                 $scanModel->summary = $aiResponse->metadata;
             } catch (\Exception $e) {
                 $this->error("AI Analysis failed: " . $e->getMessage());

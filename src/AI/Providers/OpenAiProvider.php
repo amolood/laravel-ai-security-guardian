@@ -2,6 +2,7 @@
 
 namespace Abdalmolood\AiSecurityGuardian\AI\Providers;
 
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Abdalmolood\AiSecurityGuardian\Contracts\AiProviderInterface;
@@ -43,7 +44,28 @@ class OpenAiProvider implements AiProviderInterface
         $payload = Cache::remember($cacheKey, now()->addMinutes(max(1, $this->cacheTtlMinutes)), function () use ($systemPrompt, $fullPrompt) {
             $response = Http::withToken($this->apiKey)
                 ->timeout($this->timeout)
-                ->retry($this->retries, 1000)
+                ->retry(
+                    $this->retries,
+                    // Exponential backoff (1s, 2s, 4s, ...) honouring the
+                    // server's Retry-After header when present.
+                    function (int $attempt, $exception) {
+                        $retryAfterMs = $this->retryAfterMilliseconds($exception);
+
+                        return $retryAfterMs ?? (int) (1000 * (2 ** ($attempt - 1)));
+                    },
+                    // Only retry transient failures: connection errors,
+                    // rate limits (429), and 5xx. Do NOT retry 4xx like 401/400.
+                    function ($exception) {
+                        if (! $exception instanceof RequestException) {
+                            return true; // connection-level error
+                        }
+
+                        $status = $exception->response->status();
+
+                        return $status === 429 || $status >= 500;
+                    },
+                    throw: false
+                )
                 ->post('https://api.openai.com/v1/chat/completions', [
                     'model' => $this->model,
                     'messages' => [
@@ -61,10 +83,28 @@ class OpenAiProvider implements AiProviderInterface
 
             $data = $response->json();
             $rawContent = $data['choices'][0]['message']['content'] ?? '[]';
-            $decoded = json_decode($rawContent, true) ?? [];
 
-            if (isset($decoded['findings'])) {
+            try {
+                $decoded = json_decode($rawContent, true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException $e) {
+                // A 200 response carrying unparseable content must NOT be
+                // silently cached as "zero findings" — that would be
+                // indistinguishable from a clean scan for the cache TTL.
+                // Throwing here both surfaces the problem and prevents the bad
+                // payload from being cached (Cache::remember does not store on
+                // exception).
+                throw new \RuntimeException(
+                    'OpenAI returned a response that could not be parsed as JSON: ' . $e->getMessage(),
+                    previous: $e
+                );
+            }
+
+            if (is_array($decoded) && isset($decoded['findings'])) {
                 $decoded = $decoded['findings'];
+            }
+
+            if (! is_array($decoded)) {
+                $decoded = [];
             }
 
             $findings = [];
@@ -122,5 +162,24 @@ class OpenAiProvider implements AiProviderInterface
         }, $payload['findings']);
 
         return new AiResponse($findings, $payload['raw_response'], $payload['metadata']);
+    }
+
+    /**
+     * Parse a Retry-After header (delta-seconds) from a failed response into
+     * milliseconds, if present. Returns null when there is no usable header.
+     */
+    protected function retryAfterMilliseconds($exception): ?int
+    {
+        if (! $exception instanceof RequestException) {
+            return null;
+        }
+
+        $retryAfter = $exception->response->header('Retry-After');
+
+        if ($retryAfter === '' || ! is_numeric($retryAfter)) {
+            return null;
+        }
+
+        return (int) ((float) $retryAfter * 1000);
     }
 }

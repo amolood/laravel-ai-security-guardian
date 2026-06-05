@@ -61,7 +61,7 @@ class SafeFixManager
             return $applied;
         } catch (\Exception $e) {
             Log::error("Failed to apply fix for finding {$finding->id}: " . $e->getMessage());
-            if (isset($backupPath) && File::exists($backupPath)) {
+            if ($backupPath !== null && File::exists($backupPath)) {
                 File::delete($backupPath);
             }
             return false;

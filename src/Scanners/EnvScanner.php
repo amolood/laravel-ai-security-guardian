@@ -36,7 +36,7 @@ class EnvScanner implements ScannerInterface
         }
 
         // Check LOG_LEVEL
-        if ($isProduction && config('logging.default') === 'stack' && env('LOG_LEVEL', config('logging.channels.stack.level', 'debug')) === 'debug') {
+        if ($isProduction && config('logging.default') === 'stack' && config('logging.channels.stack.level', 'debug') === 'debug') {
              $findings->push(new Finding(
                 title: 'LOG_LEVEL is set to debug in production',
                 description: 'A verbose log level might log sensitive information accidentally in production.',

@@ -24,7 +24,8 @@ class RollbackCommand extends Command
         }
 
         $backupPath = $patch->backup_path;
-        $originalPath = base_path($patch->original_file_path ?? $patch->affected_file);
+        $relativePath = $patch->original_file_path ?? $patch->finding->affected_file;
+        $originalPath = base_path($relativePath);
 
         if (! File::exists($backupPath)) {
             $this->error('Backup file missing: '.$backupPath);

@@ -11,3 +11,5 @@
 /storage/framework/views/*
 /.phpunit.result.cache
 /.codex
+/build
+/composer.phar
